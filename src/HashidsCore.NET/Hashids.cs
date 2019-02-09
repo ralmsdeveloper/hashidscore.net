@@ -41,28 +41,27 @@ namespace HashidsCore.NET
         public const string DEFAULT_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         public const string DEFAULT_SEPS = "cfhistuCFHISTU";
 
-        private const int MIN_ALPHABET_LENGTH = 16;
         private const double SEP_DIV = 3.5;
         private const double GUARD_DIV = 12.0;
 
-        private string alphabet;
-        private string salt;
-        private string seps;
-        private string guards;
-        private int minHashLength;
+        private string _alphabet;
+        private string _salt;
+        private string _seps;
+        private string _guards;
+        private int _minHashLength;
 
-        private Regex guardsRegex;
-        private Regex sepsRegex;
+        private Regex _guardsRegex;
+        private Regex _sepsRegex;
 
         //  Creates the Regex in the first usage, speed up first use of non hex methods
-        private static Lazy<Regex> hexValidator = new Lazy<Regex>(() => new Regex("^[0-9a-fA-F]+$"));
-        private static Lazy<Regex> hexSplitter = new Lazy<Regex>(() => new Regex(@"[\w\W]{1,12}"));
+        private static readonly Lazy<Regex> _hexValidator = new Lazy<Regex>(() => new Regex("^[0-9a-fA-F]+$"));
+        private static readonly Lazy<Regex> _hexSplitter = new Lazy<Regex>(() => new Regex(@"[\w\W]{1,12}"));
 
         /// <summary>
         /// Instantiates a new Hashids with the default setup.
         /// </summary>
         public Hashids() : this(string.Empty, 0, DEFAULT_ALPHABET, DEFAULT_SEPS)
-        {}
+        { }
 
         /// <summary>
         /// Instantiates a new Hashids en/de-coder.
@@ -75,13 +74,15 @@ namespace HashidsCore.NET
             if (string.IsNullOrWhiteSpace(alphabet))
                 throw new ArgumentNullException("alphabet");
 
-            this.salt = salt;
-            this.alphabet = new string(alphabet.ToCharArray().Distinct().ToArray());
-            this.seps = seps;
-            this.minHashLength = minHashLength;
+            _salt = salt;
+            _alphabet = new string(alphabet.ToCharArray().Distinct().ToArray());
+            _seps = seps;
+            _minHashLength = minHashLength;
 
-            if (this.alphabet.Length < 16)
+            if (alphabet.Length < 16)
+            {
                 throw new ArgumentException("alphabet must contain atleast 4 unique characters.", "alphabet");
+            }
 
             SetupSeps();
             SetupGuards();
@@ -95,7 +96,7 @@ namespace HashidsCore.NET
         public virtual string Encode(params int[] numbers)
         {
             if (numbers.Any(n => n < 0)) return string.Empty;
-            return this.GenerateHashFrom(numbers.Select(n => (long)n).ToArray());
+            return GenerateHashFrom(numbers.Select(n => (long)n).ToArray());
         }
 
         /// <summary>
@@ -105,7 +106,7 @@ namespace HashidsCore.NET
         /// <returns>the hashed string</returns>
         public virtual string Encode(IEnumerable<int> numbers)
         {
-            return this.Encode(numbers.ToArray());
+            return Encode(numbers.ToArray());
         }
 
         /// <summary>
@@ -126,11 +127,11 @@ namespace HashidsCore.NET
         /// <returns></returns>
         public virtual string EncodeHex(string hex)
         {
-            if (!hexValidator.Value.IsMatch(hex))
+            if (!_hexValidator.Value.IsMatch(hex))
                 return string.Empty;
 
             var numbers = new List<long>();
-            var matches = hexSplitter.Value.Matches(hex);
+            var matches = _hexSplitter.Value.Matches(hex);
 
             foreach (Match match in matches)
             {
@@ -138,7 +139,7 @@ namespace HashidsCore.NET
                 numbers.Add(number);
             }
 
-            return this.EncodeLong(numbers.ToArray());
+            return EncodeLong(numbers.ToArray());
         }
 
         /// <summary>
@@ -149,7 +150,7 @@ namespace HashidsCore.NET
         public virtual string DecodeHex(string hash)
         {
             var ret = new StringBuilder();
-            var numbers = this.DecodeLong(hash);
+            var numbers = DecodeLong(hash);
 
             foreach (var number in numbers)
                 ret.Append(string.Format("{0:X}", number).Substring(1));
@@ -164,7 +165,7 @@ namespace HashidsCore.NET
         /// <returns>the numbers</returns>
         public long[] DecodeLong(string hash)
         {
-            return this.GetNumbersFrom(hash);
+            return GetNumbersFrom(hash);
         }
 
         /// <summary>
@@ -190,7 +191,7 @@ namespace HashidsCore.NET
         public string EncodeLong(IEnumerable<long> numbers)
         {
             return EncodeLong(numbers.ToArray());
-        } 
+        }
 
         /// <summary>
         /// 
@@ -198,31 +199,34 @@ namespace HashidsCore.NET
         private void SetupSeps()
         {
             // seps should contain only characters present in alphabet; 
-            seps = new string(seps.ToCharArray().Intersect(alphabet.ToCharArray()).ToArray());
+            _seps = new string(_seps.ToCharArray().Intersect(_alphabet.ToCharArray()).ToArray());
 
             // alphabet should not contain seps.
-            alphabet = new string(alphabet.ToCharArray().Except(seps.ToCharArray()).ToArray());
+            _alphabet = new string(_alphabet.ToCharArray().Except(_seps.ToCharArray()).ToArray());
 
-            seps = ConsistentShuffle(seps, salt);
+            _seps = ConsistentShuffle(_seps, _salt);
 
-            if (seps.Length == 0 || (alphabet.Length / seps.Length) > SEP_DIV)
+            if (_seps.Length == 0 || (_alphabet.Length / _seps.Length) > SEP_DIV)
             {
-                var sepsLength = (int)Math.Ceiling(alphabet.Length / SEP_DIV);
+                var sepsLength = (int)Math.Ceiling(_alphabet.Length / SEP_DIV);
                 if (sepsLength == 1)
                     sepsLength = 2;
 
-                if (sepsLength > seps.Length)
+                if (sepsLength > _seps.Length)
                 {
-                    var diff = sepsLength - seps.Length;
-                    seps += alphabet.Substring(0, diff);
-                    alphabet = alphabet.Substring(diff);
+                    var diff = sepsLength - _seps.Length;
+                    _seps += _alphabet.Substring(0, diff);
+                    _alphabet = _alphabet.Substring(diff);
                 }
 
-                else seps = seps.Substring(0, sepsLength);
+                else
+                {
+                    _seps = _seps.Substring(0, sepsLength);
+                }
             }
 
-            sepsRegex = new Regex(string.Concat("[", seps, "]"));
-            alphabet = ConsistentShuffle(alphabet, salt);
+            _sepsRegex = new Regex(string.Concat("[", _seps, "]"));
+            _alphabet = ConsistentShuffle(_alphabet, _salt);
         }
 
         /// <summary>
@@ -230,21 +234,20 @@ namespace HashidsCore.NET
         /// </summary>
         private void SetupGuards()
         {
-            var guardCount = (int)Math.Ceiling(alphabet.Length / GUARD_DIV);
+            var guardCount = (int)Math.Ceiling(_alphabet.Length / GUARD_DIV);
 
-            if (alphabet.Length < 3)
+            if (_alphabet.Length < 3)
             {
-                guards = seps.Substring(0, guardCount);
-                seps = seps.Substring(guardCount);
+                _guards = _seps.Substring(0, guardCount);
+                _seps = _seps.Substring(guardCount);
             }
-
             else
             {
-                guards = alphabet.Substring(0, guardCount);
-                alphabet = alphabet.Substring(guardCount);
+                _guards = _alphabet.Substring(0, guardCount);
+                _alphabet = _alphabet.Substring(guardCount);
             }
 
-            guardsRegex = new Regex(string.Concat("[", guards, "]"));
+            _guardsRegex = new Regex(string.Concat("[", _guards, "]"));
         }
 
         /// <summary>
@@ -255,14 +258,18 @@ namespace HashidsCore.NET
         private string GenerateHashFrom(long[] numbers)
         {
             if (numbers == null || numbers.Length == 0)
+            {
                 return string.Empty;
+            }
 
             var ret = new StringBuilder();
-            var alphabet = this.alphabet;
+            var alphabet = _alphabet;
 
             long numbersHashInt = 0;
             for (var i = 0; i < numbers.Length; i++)
+            {
                 numbersHashInt += (int)(numbers[i] % (i + 100));
+            }
 
             var lottery = alphabet[(int)(numbersHashInt % alphabet.Length)];
             ret.Append(lottery.ToString());
@@ -270,7 +277,7 @@ namespace HashidsCore.NET
             for (var i = 0; i < numbers.Length; i++)
             {
                 var number = numbers[i];
-                var buffer = lottery + salt + alphabet;
+                var buffer = lottery + _salt + alphabet;
 
                 alphabet = ConsistentShuffle(alphabet, buffer.Substring(0, alphabet.Length));
                 var last = Hash(number, alphabet);
@@ -279,41 +286,41 @@ namespace HashidsCore.NET
 
                 if (i + 1 < numbers.Length)
                 {
-                    number %= ((int)last[0] + i);
-                    var sepsIndex = ((int)number % this.seps.Length);
+                    number %= (int)last[0] + i;
+                    var sepsIndex = (int)number % _seps.Length;
 
-                    ret.Append(this.seps[sepsIndex]);
+                    ret.Append(_seps[sepsIndex]);
                 }
             }
 
-            if (ret.Length < minHashLength)
+            if (ret.Length < _minHashLength)
             {
-                var guardIndex = ((int)(numbersHashInt + (int)ret[0]) % this.guards.Length);
-                var guard = guards[guardIndex];
+                var guardIndex = (int)(numbersHashInt + (int)ret[0]) % _guards.Length;
+                var guard = _guards[guardIndex];
 
                 ret.Insert(0, guard);
 
-                if (ret.Length < minHashLength)
+                if (ret.Length < _minHashLength)
                 {
-                    guardIndex = ((int)(numbersHashInt + (int)ret[2]) % this.guards.Length);
-                    guard = guards[guardIndex];
+                    guardIndex = (int)(numbersHashInt + (int)ret[2]) % _guards.Length;
+                    guard = _guards[guardIndex];
 
                     ret.Append(guard);
                 }
             }
 
             var halfLength = (int)(alphabet.Length / 2);
-            while (ret.Length < minHashLength)
+            while (ret.Length < _minHashLength)
             {
                 alphabet = ConsistentShuffle(alphabet, alphabet);
                 ret.Insert(0, alphabet.Substring(halfLength));
                 ret.Append(alphabet.Substring(0, halfLength));
 
-                var excess = ret.Length - this.minHashLength;
+                var excess = ret.Length - _minHashLength;
                 if (excess > 0)
                 {
                     ret.Remove(0, excess / 2);
-                    ret.Remove(this.minHashLength, ret.Length - this.minHashLength);
+                    ret.Remove(_minHashLength, ret.Length - _minHashLength);
                 }
             }
 
@@ -327,7 +334,7 @@ namespace HashidsCore.NET
             do
             {
                 hash.Insert(0, alphabet[(int)(input % alphabet.Length)]);
-                input = (input / alphabet.Length);
+                input = input / alphabet.Length;
             } while (input > 0);
 
             return hash.ToString();
@@ -349,14 +356,18 @@ namespace HashidsCore.NET
         private long[] GetNumbersFrom(string hash)
         {
             if (string.IsNullOrWhiteSpace(hash))
+            {
                 return new long[0];
+            }
 
-            var alphabet = new string(this.alphabet.ToCharArray());
+            var alphabet = new string(_alphabet.ToCharArray());
             var ret = new List<long>();
             int i = 0;
 
-            var hashBreakdown = guardsRegex.Replace(hash, " ");
-            var hashArray = hashBreakdown.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var hashBreakdown = _guardsRegex.Replace(hash, " ");
+            var hashArray = hashBreakdown.Split(
+                new[] { ' ' },
+                StringSplitOptions.RemoveEmptyEntries);
 
             if (hashArray.Length == 3 || hashArray.Length == 2)
                 i = 1;
@@ -367,20 +378,24 @@ namespace HashidsCore.NET
                 var lottery = hashBreakdown[0];
                 hashBreakdown = hashBreakdown.Substring(1);
 
-                hashBreakdown = sepsRegex.Replace(hashBreakdown, " ");
-                hashArray = hashBreakdown.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                hashBreakdown = _sepsRegex.Replace(hashBreakdown, " ");
+                hashArray = hashBreakdown.Split(
+                    new[] { ' ' },
+                    StringSplitOptions.RemoveEmptyEntries);
 
                 for (var j = 0; j < hashArray.Length; j++)
                 {
                     var subHash = hashArray[j];
-                    var buffer = lottery + this.salt + alphabet;
+                    var buffer = lottery + _salt + alphabet;
 
                     alphabet = ConsistentShuffle(alphabet, buffer.Substring(0, alphabet.Length));
                     ret.Add(Unhash(subHash, alphabet));
                 }
 
                 if (EncodeLong(ret.ToArray()) != hash)
+                {
                     ret.Clear();
+                }
             }
 
             return ret.ToArray();
@@ -395,14 +410,16 @@ namespace HashidsCore.NET
         private string ConsistentShuffle(string alphabet, string salt)
         {
             if (string.IsNullOrWhiteSpace(salt))
+            {
                 return alphabet;
+            }
 
             int n;
             var letters = alphabet.ToCharArray();
             for (int i = letters.Length - 1, v = 0, p = 0; i > 0; i--, v++)
             {
                 v %= salt.Length;
-                p += (n = salt[v]);
+                p += n = salt[v];
                 var j = (n + v + p) % i;
                 // swap characters at positions i and j
                 var temp = letters[j];
