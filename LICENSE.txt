@@ -1,3 +1,4 @@
+Copyright (c) 2019 Rafael Almeida
 Copyright (c) 2012 Markus Ullmark
 
 MIT License

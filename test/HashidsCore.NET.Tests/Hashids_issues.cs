@@ -1,12 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
-using FluentAssertions;
+﻿/*
+ * Copyright (c) 2019 Rafael Almeida
+ * Copyright (c) 2012 Markus Ullmark
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 
-namespace HashidsNet.test
+using System;
+using System.Collections.Generic;
+using Xunit;
+
+namespace HashidsCore.NET.Tests
 {
     public class Hashids_issues
     {
@@ -37,7 +59,8 @@ namespace HashidsNet.test
 
             var encoded = hash.EncodeLong(longs);
             var decoded = hash.DecodeLong(encoded);
-            decoded.Should().Equal(longs.ToArray());
+
+            Assert.Equal(decoded, longs.ToArray());
         }
 
         [Fact]
@@ -45,22 +68,22 @@ namespace HashidsNet.test
         {
             var hashids = new Hashids("this is my salt");
             var encoded = hashids.EncodeHex("DEADBEEF");
-            encoded.Should().Be("kRNrpKlJ");
+            Assert.Equal("kRNrpKlJ", encoded);
 
             var decoded = hashids.DecodeHex(encoded);
-            decoded.Should().Be("DEADBEEF");
+            Assert.Equal("DEADBEEF", decoded);
 
             var encoded2 = hashids.EncodeHex("1234567890ABCDEF");
             var decoded2 = hashids.DecodeHex(encoded2);
-            decoded2.Should().Be("1234567890ABCDEF");
+            Assert.Equal("1234567890ABCDEF", decoded2);
         }
 
         [Fact]
         void issue_18_it_should_return_empty_string_if_negative_numbers()
         {
             var hashids = new Hashids("this is my salt");
-            hashids.Encode(1, 4, 5, -3).Should().Be(string.Empty);
-            hashids.EncodeLong(4, 5, 2, -4).Should().Be(string.Empty);
+            Assert.Equal(hashids.Encode(1, 4, 5, -3), string.Empty);
+            Assert.Equal(hashids.EncodeLong(4, 5, 2, -4), string.Empty);
         }
 
         [Fact]
@@ -68,15 +91,11 @@ namespace HashidsNet.test
         {
             var hashids = new Hashids(salt: "Salty stuff", alphabet: "qwerty1234!¤%&/()=", seps: "1234");
             var numbers = hashids.Decode("abcd");
-            numbers.Length.Should().Be(0);
-
-            var hashids2 = new Hashids();
-            hashids.Decode("13-37").Length.Should().Be(0);
-            hashids.DecodeLong("32323kldffd!").Length.Should().Be(0);
-
-            var hashids3 = new Hashids(alphabet: "1234567890;:_!#¤%&/()=", seps: "!#¤%&/()=");
-            hashids.Decode("asdfb").Length.Should().Be(0);
-            hashids.DecodeLong("asdfgfdgdfgkj").Length.Should().Be(0);
+            Assert.Empty(numbers);
+            Assert.Empty(hashids.Decode("13-37"));
+            Assert.Empty(hashids.DecodeLong("32323kldffd!"));
+            Assert.Empty(hashids.Decode("asdfb"));
+            Assert.Empty(hashids.DecodeLong("asdfgfdgdfgkj"));
         }
     }
 }

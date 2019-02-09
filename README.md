@@ -1,4 +1,7 @@
-# Hashids
+# HashidsCore
+
+This is a fork of "https://github.com/ullmark/hashids.net" ported to .NetStandard, original version was developed by Markus Ullmark.
+
 A small .NET package to generate YouTube-like hashes from one or many numbers. 
 Use hashids when you do not want to expose your database ids to the user.
 
@@ -28,7 +31,7 @@ All integers need to be greater than or equal to zero.
 ## Installation
 Install the package with [NuGet][]
 
-    Install-Package hashids.net
+    Install-Package hashidscore.net
 
 ## Usage
 
@@ -216,73 +219,3 @@ var hex = hashids.DecodeHex("kRNrpKlJ");
 `hex` is now going to be:
 
     DEADBEEF
-
-## Changelog
-
-**1.2.2**
-- Accepted PR [#19](https://github.com/ullmark/hashids.net/pull/19) - We now only instantiate the HEX-connected Regexes if we use any of the HEX functions. This will speed up creation of "Hashids"-instances. It 
-is likely that most users doesn't use the HEX-functions.
-- Version tag added: `1.2.2`
-
-**1.2.1**
-- Accepted PR [#11](https://github.com/ullmark/hashids.net/pull/11)
-- Fixed issue [#15](https://github.com/ullmark/hashids.net/issues/15) Decoding strings that contain characters not in the alphabet will now return empty array. (To conform to behaviour in the js-library).
-- Fixed issue [#18](https://github.com/ullmark/hashids.net/issues/18) Encoding with a negative number will now return empty string. (To conform to behaviour in the js-library).
-- Version tag added: `1.2.1`
-- `README.md` updated
-
-**1.2.0**
-- .NET Core support. Sorry for the wait and thanks [haroldma](https://github.com/haroldma), 
-[mlafleur](https://github.com/mlafleur) and [lstyles](https://github.com/lstyles) for submitting pull requests.
-- Version tag added: `1.2.0`
-- `README.md` updated
-
-**1.1.2**
-- Fixed issue [#14](https://github.com/ullmark/hashids.net/issues/14) that caused HEX values to be encoded/decoded incorrectly.
-- Version tag added `1.1.2`
-
-**1.1.1**
-- Accepted PR [#12](https://github.com/ullmark/hashids.net/pull/12) that fixed an issue when encoding very many longs at the same time
-- `README.md` updated
-- Version tag added: `1.1.1`
-
-**1.1.0**
-
-- Added support for `long` via *new* functions to not introduce breaking changes.
-    - `EncodeLong` for encodes.
-	- `DecodeLong` for decodes.
-- Added interface `IHashids` for people who want an interface to work with.
-- Version tag added: `1.1.0`
-- `README.md` updated
-
-**1.0.1**
-
-- The .NET 4.0 version of the package used .NET 4.5 as build target. This was fixed and a new version was pushed to nuget. 
-
-**1.0.0**
-
-- Several public functions marked obsolete and renamed versions added, to be more appropriate:
-	- Function `Encrypt()` changed to `Encode()`
-	- Function `Decrypt()` changed to `Decode()`
-	- Function `EncryptHex()` changed to `EncodeHex()`
-	- Function `DecryptHex()` changed to `DecodeHex()`
-	
-	Hashids was designed to encode integers, primary ids at most. We've had several requests to encrypt sensitive data with Hashids and this is the wrong algorithm for that. So to encourage more appropriate use, `encrypt/decrypt` is being "downgraded" to `encode/decode`.
-
-- Version tag added: `1.0`
-- `README.md` updated
-
-**0.3.4**
-
-  - The public functions are now virtual and therefor can be mocked with a mocking library.
-
-**0.3.3**
-
-  - Rewrote the code to support the new hashing algorithm.
-  - Support for `EncryptHex` and `DecryptHex`
-
-**0.1.4**
-
-  - Initial version of the port.
-
-[Nuget]: http://nuget.org/

@@ -1,11 +1,37 @@
-﻿using System.Collections;
+﻿/*
+ * Copyright (c) 2019 Rafael Almeida
+ * Copyright (c) 2012 Markus Ullmark
+ * 
+ * MIT License
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+
 using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace HashidsNet
+namespace HashidsCore.NET
 {
     /// <summary>
     /// Generate YouTube-like hashes from one or many numbers. Use hashids when you do not want to expose your database ids to the user.
@@ -29,13 +55,8 @@ namespace HashidsNet
         private Regex sepsRegex;
 
         //  Creates the Regex in the first usage, speed up first use of non hex methods
-#if CORE
         private static Lazy<Regex> hexValidator = new Lazy<Regex>(() => new Regex("^[0-9a-fA-F]+$"));
         private static Lazy<Regex> hexSplitter = new Lazy<Regex>(() => new Regex(@"[\w\W]{1,12}"));
-#else
-        private static Lazy<Regex> hexValidator = new Lazy<Regex>(() => new Regex("^[0-9a-fA-F]+$", RegexOptions.Compiled));
-        private static Lazy<Regex> hexSplitter = new Lazy<Regex>(() => new Regex(@"[\w\W]{1,12}", RegexOptions.Compiled));
-#endif
 
         /// <summary>
         /// Instantiates a new Hashids with the default setup.
@@ -62,8 +83,8 @@ namespace HashidsNet
             if (this.alphabet.Length < 16)
                 throw new ArgumentException("alphabet must contain atleast 4 unique characters.", "alphabet");
 
-            this.SetupSeps();
-            this.SetupGuards();
+            SetupSeps();
+            SetupGuards();
         }
 
         /// <summary>
@@ -95,7 +116,7 @@ namespace HashidsNet
         /// <returns>the numbers</returns>
         public virtual int[] Decode(string hash)
         {
-            return this.GetNumbersFrom(hash).Select(n => (int)n).ToArray();
+            return GetNumbersFrom(hash).Select(n => (int)n).ToArray();
         }
 
         /// <summary>
@@ -153,8 +174,12 @@ namespace HashidsNet
         /// <returns>the hashed string</returns>
         public string EncodeLong(params long[] numbers)
         {
-            if (numbers.Any(n => n < 0)) return string.Empty;
-            return this.GenerateHashFrom(numbers);
+            if (numbers.Any(n => n < 0))
+            {
+                return string.Empty;
+            }
+
+            return GenerateHashFrom(numbers);
         }
 
         /// <summary>
@@ -164,52 +189,8 @@ namespace HashidsNet
         /// <returns>the hashed string</returns>
         public string EncodeLong(IEnumerable<long> numbers)
         {
-            return this.EncodeLong(numbers.ToArray());
-        }
-
-        /// <summary>
-        /// Encodes the provided numbers into a string.
-        /// </summary>
-        /// <param name="number">the numbers</param>
-        /// <returns>the hash</returns>
-        [Obsolete("Use 'Encode' instead. The method was renamed to better explain what it actually does.")]
-        public virtual string Encrypt(params int[] numbers)
-        {
-            return Encode(numbers);
-        }
-
-        /// <summary>
-        /// Encrypts the provided hex string to a hashids hash.
-        /// </summary>
-        /// <param name="hex"></param>
-        /// <returns></returns>
-        [Obsolete("Use 'EncodeHex' instead. The method was renamed to better explain what it actually does.")]
-        public virtual string EncryptHex(string hex)
-        {
-            return EncodeHex(hex);
-        }
-
-        /// <summary>
-        /// Decodes the provided numbers into a array of numbers
-        /// </summary>
-        /// <param name="hash">hash</param>
-        /// <returns>array of numbers.</returns>
-        [Obsolete("Use 'Decode' instead. Method was renamed to better explain what it actually does.")]
-        public virtual int[] Decrypt(string hash)
-        {
-            return Decode(hash);
-        }
-
-        /// <summary>
-        /// Decodes the provided hash to a hex-string
-        /// </summary>
-        /// <param name="hash"></param>
-        /// <returns></returns>
-        [Obsolete("Use 'DecodeHex' instead. The method was renamed to better explain what it actually does.")]
-        public virtual string DecryptHex(string hash)
-        {
-            return DecodeHex(hash);
-        }
+            return EncodeLong(numbers.ToArray());
+        } 
 
         /// <summary>
         /// 
@@ -240,11 +221,7 @@ namespace HashidsNet
                 else seps = seps.Substring(0, sepsLength);
             }
 
-#if CORE
             sepsRegex = new Regex(string.Concat("[", seps, "]"));
-#else
-            sepsRegex = new Regex(string.Concat("[", seps, "]"), RegexOptions.Compiled);
-#endif
             alphabet = ConsistentShuffle(alphabet, salt);
         }
 
@@ -267,11 +244,7 @@ namespace HashidsNet
                 alphabet = alphabet.Substring(guardCount);
             }
 
-#if CORE
             guardsRegex = new Regex(string.Concat("[", guards, "]"));
-#else
-            guardsRegex = new Regex(string.Concat("[", guards, "]"), RegexOptions.Compiled);
-#endif
         }
 
         /// <summary>
@@ -297,10 +270,10 @@ namespace HashidsNet
             for (var i = 0; i < numbers.Length; i++)
             {
                 var number = numbers[i];
-                var buffer = lottery + this.salt + alphabet;
+                var buffer = lottery + salt + alphabet;
 
                 alphabet = ConsistentShuffle(alphabet, buffer.Substring(0, alphabet.Length));
-                var last = this.Hash(number, alphabet);
+                var last = Hash(number, alphabet);
 
                 ret.Append(last);
 
@@ -313,24 +286,24 @@ namespace HashidsNet
                 }
             }
 
-            if (ret.Length < this.minHashLength)
+            if (ret.Length < minHashLength)
             {
                 var guardIndex = ((int)(numbersHashInt + (int)ret[0]) % this.guards.Length);
-                var guard = this.guards[guardIndex];
+                var guard = guards[guardIndex];
 
                 ret.Insert(0, guard);
 
-                if (ret.Length < this.minHashLength)
+                if (ret.Length < minHashLength)
                 {
                     guardIndex = ((int)(numbersHashInt + (int)ret[2]) % this.guards.Length);
-                    guard = this.guards[guardIndex];
+                    guard = guards[guardIndex];
 
                     ret.Append(guard);
                 }
             }
 
             var halfLength = (int)(alphabet.Length / 2);
-            while (ret.Length < this.minHashLength)
+            while (ret.Length < minHashLength)
             {
                 alphabet = ConsistentShuffle(alphabet, alphabet);
                 ret.Insert(0, alphabet.Substring(halfLength));
@@ -439,6 +412,5 @@ namespace HashidsNet
 
             return new string(letters);
         }
-
     }
 }
