@@ -3,6 +3,11 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>HashidsCore.NET</RootNamespace>
+    <PackageProjectUrl>https://github.com/ralmsdeveloper/hashidscore.net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ralmsdeveloper/hashidscore.net</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Rafael Almeida, HashidsCore</PackageTags>
+    <Description>Hashids (Hash ID's) creates short, unique, decryptable hashes from unsigned integers.</Description>
   </PropertyGroup>
 
 </Project>

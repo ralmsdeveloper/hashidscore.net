@@ -24,7 +24,6 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-using System; 
 using Xunit; 
 using System.Diagnostics;
 
@@ -32,19 +31,17 @@ namespace HashidsCore.NET.Tests
 {
     public class Hashids_perf
     {
-        static Random random = new Random();
-
         [Fact]
         private void Encode_single()
         {
             var hashids = new Hashids();
             var stopWatch = Stopwatch.StartNew();
-            for (var i = 1; i < 10_001; i++)
+            for (var i = 1; i < 50_001; i++)
             {
                 hashids.Encode(i);
             }
             stopWatch.Stop();
-            Trace.WriteLine($"10 000 encodes: {stopWatch.Elapsed}");
+            Trace.WriteLine($"50 000 encodes: {stopWatch.Elapsed}");
         }
     }
 }

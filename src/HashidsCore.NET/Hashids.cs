@@ -286,7 +286,7 @@ namespace HashidsCore.NET
 
                 if (i + 1 < numbers.Length)
                 {
-                    number %= (int)last[0] + i;
+                    number %= last[0] + i;
                     var sepsIndex = (int)number % _seps.Length;
 
                     ret.Append(_seps[sepsIndex]);

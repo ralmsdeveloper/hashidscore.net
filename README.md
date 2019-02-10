@@ -1,6 +1,6 @@
 # HashidsCore
 
-This is a fork of "https://github.com/ullmark/hashids.net" ported to .NetStandard, original version was developed by Markus Ullmark.
+This is a fork of [hashids](https://github.com/ullmark/hashids.net) ported to .NetStandard, original version was developed by Markus Ullmark.
 
 A small .NET package to generate YouTube-like hashes from one or many numbers. 
 Use hashids when you do not want to expose your database ids to the user.
